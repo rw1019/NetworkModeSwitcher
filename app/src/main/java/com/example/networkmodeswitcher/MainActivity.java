@@ -415,10 +415,6 @@ public final class MainActivity extends Activity {
                         setHighlightedMode(legacyMode);
                         Toast.makeText(this, "切换成功", Toast.LENGTH_SHORT).show();
                         status.postDelayed(this::refreshSelectedNetworkState, 1200L);
-                        if (legacyMode == 3) {
-                            status.setText("已请求 3G，等待网络注册（最多 18 秒）…");
-                            status.postDelayed(() -> verify3gOrRollback(slot, subId, previousMode), 18000L);
-                        }
                     } else {
                         status.setText("切换失败\n" + result);
                         refreshSelectedNetworkState();
@@ -426,38 +422,6 @@ public final class MainActivity extends Activity {
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> status.setText("切换失败：" + e.getMessage()));
-            }
-        }).start();
-    }
-
-    private void verify3gOrRollback(int slot, int subId, int previousMode) {
-        String actual = readActualGeneration(subId);
-        if ("3G".equals(actual) || "2G".equals(actual)) {
-            status.setText("SIM " + (slot + 1) + " 已成功注册到 " + actual);
-            refreshSelectedNetworkState();
-            return;
-        }
-
-        int restoreMode = (previousMode == 26 || previousMode == 28) ? 26 : 9;
-        long restoreMask = restoreMode == 26 ? MASK_5G : MASK_4G;
-        String restoreLabel = restoreMode == 26 ? "5G" : "4G";
-        status.setText("3G 无法注册，正在自动恢复 " + restoreLabel + "…");
-        new Thread(() -> {
-            try {
-                String result = rootAvailable ? setModeAsRoot(subId, restoreMask, restoreMode)
-                        : service.setMode(slot, subId, restoreMask, restoreMode);
-                runOnUiThread(() -> {
-                    if ("OK".equals(result)) {
-                        status.setText("当地 3G 当前无法注册，已自动恢复 " + restoreLabel
-                                + "。只有 4G 信号较差且 3G 可用时才可能切换成功。");
-                        setHighlightedMode(restoreMode);
-                        status.postDelayed(this::refreshSelectedNetworkState, 1500L);
-                    } else {
-                        status.setText("3G 无法注册，自动恢复失败，请手动选择 " + restoreLabel + "。\n" + result);
-                    }
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> status.setText("3G 无法注册，请手动恢复 " + restoreLabel + "：" + e.getMessage()));
             }
         }).start();
     }

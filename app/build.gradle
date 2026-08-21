@@ -17,7 +17,7 @@ android {
     buildTypes {
         debug {
             debuggable true
-            signingConfig null
+            signingConfig signingConfigs.debug
         }
     }
 
