@@ -79,132 +79,199 @@ public final class MainActivity extends Activity {
     private void buildUi() {
         boolean dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                 == Configuration.UI_MODE_NIGHT_YES;
-        colorBackground = dark ? Color.rgb(18, 18, 22) : Color.rgb(247, 247, 252);
-        colorSurface = dark ? Color.rgb(30, 30, 36) : Color.rgb(255, 255, 255);
-        colorSurfaceVariant = dark ? Color.rgb(50, 50, 59) : Color.rgb(232, 232, 240);
-        colorPrimary = dark ? Color.rgb(184, 196, 255) : Color.rgb(65, 87, 150);
-        colorOnPrimary = dark ? Color.rgb(28, 48, 101) : Color.WHITE;
-        colorText = dark ? Color.rgb(232, 225, 229) : Color.rgb(29, 27, 32);
-        colorMuted = dark ? Color.rgb(202, 196, 204) : Color.rgb(73, 69, 79);
-        colorOutline = dark ? Color.rgb(147, 143, 153) : Color.rgb(121, 116, 126);
-        colorStatus = dark ? Color.rgb(38, 48, 72) : Color.rgb(225, 229, 255);
+        colorBackground = dark ? Color.rgb(15, 17, 23) : Color.rgb(245, 246, 250);
+        colorSurface = dark ? Color.rgb(24, 27, 34) : Color.WHITE;
+        colorSurfaceVariant = dark ? Color.rgb(37, 41, 52) : Color.rgb(236, 239, 245);
+        colorPrimary = dark ? Color.rgb(59, 130, 246) : Color.rgb(37, 99, 235);
+        colorOnPrimary = Color.WHITE;
+        colorText = dark ? Color.rgb(241, 245, 249) : Color.rgb(15, 23, 42);
+        colorMuted = dark ? Color.rgb(148, 163, 184) : Color.rgb(100, 116, 139);
+        colorOutline = dark ? Color.rgb(46, 52, 66) : Color.rgb(224, 227, 235);
+        colorStatus = dark ? Color.rgb(26, 32, 53) : Color.rgb(238, 242, 255);
+
         getWindow().setStatusBarColor(colorBackground);
         getWindow().setNavigationBarColor(colorBackground);
         getWindow().getDecorView().setSystemUiVisibility(dark ? 0
                 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
-        int p = dp(24);
+
+        int p = dp(20);
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(colorBackground);
+        scroll.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(p, dp(52), p, dp(28));
+        root.setPadding(p, dp(44), p, dp(32));
         scroll.addView(root, new FrameLayout.LayoutParams(-1, -2));
 
-        TextView title = text("网络制式切换", 32, colorText);
+        // Header
+        TextView title = text("网络制式切换", 28, colorText);
         title.setTypeface(null, 1);
+        title.setLetterSpacing(-0.02f);
         root.addView(title);
-        TextView subtitle = text("双卡移动网络控制", 15, colorMuted);
-        subtitle.setPadding(0, dp(6), 0, dp(28));
+
+        TextView subtitle = text("双卡移动网络控制与 5G 策略", 14, colorMuted);
+        subtitle.setPadding(0, dp(4), 0, dp(24));
         root.addView(subtitle);
 
-        TextView simHeading = text("SIM 卡", 14, colorMuted);
+        // Status Banner Card (Network status overview)
+        LinearLayout netCard = card(16);
+        LinearLayout netCardInner = new LinearLayout(this);
+        netCardInner.setOrientation(LinearLayout.VERTICAL);
+        netCardInner.setPadding(dp(16), dp(14), dp(16), dp(14));
+
+        TextView netLabel = text("实时驻网状态", 12, colorMuted);
+        netLabel.setTypeface(null, 1);
+        netCardInner.addView(netLabel);
+
+        networkState = text("正在读取网络状态…", 16, colorPrimary);
+        networkState.setTypeface(null, 1);
+        networkState.setPadding(0, dp(4), 0, 0);
+        netCardInner.addView(networkState);
+        netCard.addView(netCardInner, new LinearLayout.LayoutParams(-1, -2));
+
+        LinearLayout.LayoutParams netCardParams = new LinearLayout.LayoutParams(-1, -2);
+        netCardParams.setMargins(0, 0, 0, dp(20));
+        root.addView(netCard, netCardParams);
+
+        // Section: SIM Selection
+        TextView simHeading = text("选择 SIM 卡", 13, colorMuted);
         simHeading.setTypeface(null, 1);
         simHeading.setPadding(dp(4), 0, 0, dp(8));
         root.addView(simHeading);
-        LinearLayout simCard = card();
+
+        LinearLayout simCard = card(16);
         simList = new LinearLayout(this);
         simList.setOrientation(LinearLayout.VERTICAL);
-        simList.setPadding(dp(12), dp(8), dp(12), dp(8));
+        simList.setPadding(dp(10), dp(6), dp(10), dp(6));
         simCard.addView(simList, new FrameLayout.LayoutParams(-1, -2));
-        root.addView(simCard, new LinearLayout.LayoutParams(-1, -2));
 
-        networkState = text("当前网络：正在读取…", 15, colorPrimary);
-        networkState.setTypeface(null, 1);
-        LinearLayout.LayoutParams networkParams = new LinearLayout.LayoutParams(-1, -2);
-        networkParams.setMargins(dp(4), dp(14), dp(4), 0);
-        root.addView(networkState, networkParams);
+        LinearLayout.LayoutParams simParams = new LinearLayout.LayoutParams(-1, -2);
+        simParams.setMargins(0, 0, 0, dp(22));
+        root.addView(simCard, simParams);
 
-        TextView modeHeading = text("最高网络制式", 14, colorMuted);
+        // Section: Max Network Mode (Segmented layout)
+        TextView modeHeading = text("最高网络制式", 13, colorMuted);
         modeHeading.setTypeface(null, 1);
-        modeHeading.setPadding(dp(4), dp(22), 0, dp(8));
+        modeHeading.setPadding(dp(4), 0, 0, dp(8));
         root.addView(modeHeading);
+
         LinearLayout modeRow = new LinearLayout(this);
-        root.addView(modeRow, new LinearLayout.LayoutParams(-1, dp(56)));
+        modeRow.setOrientation(LinearLayout.HORIZONTAL);
+        modeRow.setPadding(dp(3), dp(3), dp(3), dp(3));
+        modeRow.setBackground(createPillDrawable(colorSurfaceVariant, dp(14), 0, 0));
+
         String[] labels = {"3G", "4G", "5G"};
         long[] masks = {MASK_3G, MASK_4G, MASK_5G};
         int[] modes = {3, 9, 26};
         for (int i = 0; i < labels.length; i++) {
             Button button = new Button(this);
             button.setText(labels[i]);
-            button.setTextSize(16);
+            button.setTextSize(15);
+            button.setTypeface(null, 1);
             button.setAllCaps(false);
+            button.setStateListAnimator(null);
+            button.setElevation(0);
+            button.setTextColor(colorText);
+            button.setBackground(createPillDrawable(Color.TRANSPARENT, dp(11), 0, 0));
             final int index = i;
             button.setOnClickListener(v -> applyMode(labels[index], masks[index], modes[index]));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(56), 1f);
-            lp.setMargins(i == 0 ? 0 : dp(5), 0, i == 2 ? 0 : dp(5), 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(46), 1f);
             modeRow.addView(button, lp);
             modeButtons[i] = button;
         }
+        root.addView(modeRow, new LinearLayout.LayoutParams(-1, dp(52)));
 
+        // Section: 5G NR Mode
         nrModeSection = new LinearLayout(this);
         nrModeSection.setOrientation(LinearLayout.VERTICAL);
         nrModeSection.setVisibility(View.GONE);
         root.addView(nrModeSection, new LinearLayout.LayoutParams(-1, -2));
-        TextView nrHeading = text("5G 组网模式", 14, colorMuted);
+
+        TextView nrHeading = text("5G 组网模式 (三星基带)", 13, colorMuted);
         nrHeading.setTypeface(null, 1);
-        nrHeading.setPadding(dp(4), dp(22), 0, dp(8));
+        nrHeading.setPadding(dp(4), dp(22), 0, dp(4));
         nrModeSection.addView(nrHeading);
-        nrModeState = text("正在识别当前上网卡…", 14, colorPrimary);
+
+        nrModeState = text("正在识别当前上网卡…", 13, colorPrimary);
         nrModeState.setPadding(dp(4), 0, dp(4), dp(8));
         nrModeSection.addView(nrModeState);
+
         LinearLayout nrModeRow = new LinearLayout(this);
-        nrModeSection.addView(nrModeRow, new LinearLayout.LayoutParams(-1, dp(56)));
-        String[] nrLabels = {"自动", "NSA", "SA"};
+        nrModeRow.setOrientation(LinearLayout.HORIZONTAL);
+        nrModeRow.setPadding(dp(3), dp(3), dp(3), dp(3));
+        nrModeRow.setBackground(createPillDrawable(colorSurfaceVariant, dp(14), 0, 0));
+        nrModeSection.addView(nrModeRow, new LinearLayout.LayoutParams(-1, dp(52)));
+
+        String[] nrLabels = {"自动 (SA+NSA)", "NSA", "SA"};
         for (int i = 0; i < nrLabels.length; i++) {
             Button button = new Button(this);
             button.setText(nrLabels[i]);
-            button.setTextSize(15);
+            button.setTextSize(13);
+            button.setTypeface(null, 1);
             button.setAllCaps(false);
+            button.setStateListAnimator(null);
+            button.setElevation(0);
+            button.setTextColor(colorText);
+            button.setBackground(createPillDrawable(Color.TRANSPARENT, dp(11), 0, 0));
             final int nrMode = i;
             button.setOnClickListener(v -> applyNrMode(nrMode));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(56), 1f);
-            lp.setMargins(i == 0 ? 0 : dp(5), 0, i == 2 ? 0 : dp(5), 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(46), 1f);
             nrModeRow.addView(button, lp);
             nrModeButtons[i] = button;
         }
 
-        LinearLayout statusCard = card();
-        statusCard.setBackgroundTintList(ColorStateList.valueOf(colorStatus));
+        // Section: Authorization & Status Card
+        LinearLayout statusCard = card(16);
+        GradientDrawable statusBg = new GradientDrawable();
+        statusBg.setColor(colorStatus);
+        statusBg.setCornerRadius(dp(16));
+        statusBg.setStroke(dp(1), dark ? Color.rgb(44, 55, 88) : Color.rgb(199, 210, 254));
+        statusCard.setBackground(statusBg);
+
         LinearLayout statusBox = new LinearLayout(this);
         statusBox.setOrientation(LinearLayout.VERTICAL);
-        statusBox.setPadding(dp(18), dp(14), dp(18), dp(14));
-        TextView statusLabel = text("授权与操作状态", 12, colorPrimary);
+        statusBox.setPadding(dp(16), dp(14), dp(16), dp(14));
+
+        TextView statusLabel = text("服务授权与运行状态", 12, colorPrimary);
         statusLabel.setTypeface(null, 1);
         statusBox.addView(statusLabel);
-        status = text("正在检查权限…", 15, colorText);
+
+        status = text("正在检查权限…", 14, colorText);
         status.setPadding(0, dp(4), 0, 0);
+        status.setLineSpacing(dp(2), 1f);
         statusBox.addView(status);
         statusCard.addView(statusBox);
+
         LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(-1, -2);
-        statusParams.setMargins(0, dp(26), 0, dp(20));
+        statusParams.setMargins(0, dp(24), 0, dp(22));
         root.addView(statusCard, statusParams);
 
+        // Action Buttons: Primary (Refresh) & Secondary Outline (Auth)
         Button refresh = new Button(this);
         refresh.setText("刷新当前网络状态");
         refresh.setTextSize(15);
-        refresh.setTextColor(Color.WHITE);
-        refresh.setBackgroundTintList(ColorStateList.valueOf(colorPrimary));
+        refresh.setTypeface(null, 1);
         refresh.setTextColor(colorOnPrimary);
+        refresh.setElevation(0);
+        refresh.setStateListAnimator(null);
+        refresh.setBackground(createPillDrawable(colorPrimary, dp(14), 0, 0));
         refresh.setOnClickListener(v -> refreshSelectedNetworkState());
-        root.addView(refresh, new LinearLayout.LayoutParams(-1, dp(56)));
+        root.addView(refresh, new LinearLayout.LayoutParams(-1, dp(50)));
 
         Button auth = new Button(this);
         auth.setText("重新检测 Root / Shizuku");
+        auth.setTextSize(14);
+        auth.setTextColor(colorMuted);
+        auth.setElevation(0);
+        auth.setStateListAnimator(null);
+        auth.setBackground(createPillDrawable(colorSurface, dp(14), dp(1), colorOutline));
         auth.setOnClickListener(v -> detectAuthorization());
-        LinearLayout.LayoutParams authParams = new LinearLayout.LayoutParams(-1, dp(56));
+        LinearLayout.LayoutParams authParams = new LinearLayout.LayoutParams(-1, dp(48));
         authParams.setMargins(0, dp(10), 0, 0);
         root.addView(auth, authParams);
+
         setContentView(scroll);
     }
 
@@ -233,9 +300,11 @@ public final class MainActivity extends Activity {
             radio.setId(View.generateViewId());
             radio.setTag(slot);
             radio.setText("SIM " + (slot + 1) + "  ·  " + info.getDisplayName());
-            radio.setTextSize(17);
-            radio.setPadding(dp(8), dp(8), 0, dp(8));
-            group.addView(radio, new RadioGroup.LayoutParams(-1, dp(56)));
+            radio.setTextSize(15);
+            radio.setTextColor(colorText);
+            radio.setButtonTintList(ColorStateList.valueOf(colorPrimary));
+            radio.setPadding(dp(8), dp(10), dp(4), dp(10));
+            group.addView(radio, new RadioGroup.LayoutParams(-1, -2));
         }
         selectedSlot = infos.get(0).getSimSlotIndex();
         group.setOnCheckedChangeListener((g, checkedId) -> {
@@ -296,9 +365,10 @@ public final class MainActivity extends Activity {
     private void setHighlightedNrMode(int mode) {
         for (int i = 0; i < nrModeButtons.length; i++) {
             boolean active = i == mode;
-            nrModeButtons[i].setTextColor(active ? colorOnPrimary : colorText);
-            nrModeButtons[i].setBackgroundTintList(ColorStateList.valueOf(
-                    active ? colorPrimary : colorSurfaceVariant));
+            nrModeButtons[i].setTextColor(active ? colorOnPrimary : colorMuted);
+            nrModeButtons[i].setBackground(createPillDrawable(
+                    active ? colorPrimary : Color.TRANSPARENT,
+                    dp(11), 0, 0));
         }
     }
 
@@ -382,9 +452,10 @@ public final class MainActivity extends Activity {
         for (int i = 0; i < modeButtons.length; i++) {
             boolean active = i == selected;
             modeButtons[i].setSelected(active);
-            modeButtons[i].setTextColor(active ? colorOnPrimary : colorText);
-            modeButtons[i].setBackgroundTintList(ColorStateList.valueOf(
-                    active ? colorPrimary : colorSurfaceVariant));
+            modeButtons[i].setTextColor(active ? colorOnPrimary : colorMuted);
+            modeButtons[i].setBackground(createPillDrawable(
+                    active ? colorPrimary : Color.TRANSPARENT,
+                    dp(11), 0, 0));
         }
     }
 
@@ -538,14 +609,26 @@ public final class MainActivity extends Activity {
     private TextView text(String value, int sp, int color) {
         TextView view = new TextView(this); view.setText(value); view.setTextSize(sp); view.setTextColor(color); return view;
     }
-    private LinearLayout card() {
+    private LinearLayout card(int radiusDp) {
         LinearLayout view = new LinearLayout(this);
         GradientDrawable background = new GradientDrawable();
         background.setColor(colorSurface);
-        background.setCornerRadius(dp(24));
+        background.setCornerRadius(dp(radiusDp));
         background.setStroke(dp(1), colorOutline);
         view.setBackground(background);
         return view;
+    }
+    private LinearLayout card() {
+        return card(20);
+    }
+    private GradientDrawable createPillDrawable(int solidColor, int radiusDp, int strokeWidthDp, int strokeColor) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(solidColor);
+        drawable.setCornerRadius(radiusDp);
+        if (strokeWidthDp > 0) {
+            drawable.setStroke(strokeWidthDp, strokeColor);
+        }
+        return drawable;
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 }
